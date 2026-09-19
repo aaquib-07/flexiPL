@@ -36,6 +36,10 @@
   --insight-accent: var(--brand-navy);
   --insight-bg: rgba(26,43,107,0.04);
   --footer-bg: rgba(26,43,107,0.03);
+  --warn-color: #dc2626;
+  --warn-glow: rgba(220,38,38,0.12);
+  --amber-color: #d97706;
+  --amber-glow: rgba(217,119,6,0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -64,6 +68,10 @@
     --insight-accent: var(--brand-navy);
     --insight-bg: rgba(74,106,229,0.06);
     --footer-bg: rgba(255,255,255,0.03);
+    --warn-color: #f87171;
+    --warn-glow: rgba(248,113,113,0.15);
+    --amber-color: #fbbf24;
+    --amber-glow: rgba(251,191,36,0.15);
   }
 }
 :root[data-theme="dark"] {
@@ -91,6 +99,10 @@
   --insight-accent: var(--brand-navy);
   --insight-bg: rgba(74,106,229,0.06);
   --footer-bg: rgba(255,255,255,0.03);
+  --warn-color: #f87171;
+  --warn-glow: rgba(248,113,113,0.15);
+  --amber-color: #fbbf24;
+  --amber-glow: rgba(251,191,36,0.15);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -298,6 +310,12 @@ body {
 .kpi-card[data-accent="green"] .kpi-icon {
   background: var(--green-glow); color: var(--brand-green);
 }
+.kpi-card[data-accent="warn"] .kpi-icon {
+  background: var(--warn-glow); color: var(--warn-color);
+}
+.kpi-card[data-accent="amber"] .kpi-icon {
+  background: var(--amber-glow); color: var(--amber-color);
+}
 .kpi-value {
   font-size: 2.1rem; font-weight: 900; line-height: 1;
   margin-bottom: 0.3rem; letter-spacing: -0.02em;
@@ -331,6 +349,11 @@ body {
   background: var(--bg-surface);
 }
 .prev-section .kpi-icon { opacity: 0.8; }
+
+/* ── Show/No-Show section accent ── */
+.show-noshow-section .kpi-card::after {
+  background: linear-gradient(90deg, var(--brand-navy), var(--amber-color, var(--brand-green)));
+}
 
 /* ── Chart Section ── */
 .chart-section {
@@ -473,7 +496,7 @@ body {
   <!-- Header -->
   <header class="dash-header">
     <div class="header-left">
-      <img class="header-logo-icon" alt="FlexiPL" src="./logo.png""> <span class="header-brand-name">Flexi<span class="brand-pl">PL</span></span>
+      <img class="header-logo-icon" alt="FlexiPL" src="./logo.png"> <span class="header-brand-name">Flexi<span class="brand-pl">PL</span></span>
       <div class="header-divider"></div>
       <div class="header-meta">
         <h1>Weekly Campaign Performance Report</h1>
@@ -492,6 +515,15 @@ body {
     <span class="section-badge">This Week</span>
   </div>
   <div class="kpi-grid" id="current-kpis"></div>
+
+  <!-- Show & No Show Metrics of Current Week -->
+  <div class="show-noshow-section">
+    <div class="section-title">
+      <h2>Show &amp; No Show Metrics of Current Week</h2>
+      <span class="section-badge" style="background:var(--amber-glow);color:var(--amber-color);">Meetings</span>
+    </div>
+    <div class="kpi-grid" id="show-noshow-kpis"></div>
+  </div>
 
   <!-- Previous Week -->
   <div class="prev-section">
@@ -551,6 +583,17 @@ const previousWeek = {
 previousWeek.connectedPct = (previousWeek.callsConnected / previousWeek.callsTaken * 100);
 previousWeek.appointmentPct = (previousWeek.appointments / previousWeek.callsConnected * 100);
 
+// Show & No Show Metrics
+const showNoShow = {
+  totalMeetings: 5,
+  show: 1,
+  showRate: 20,
+  noShowCount: 3,
+  noShowRate: 60,
+  cancelledByProspects: 1,
+  cancelledRate: 20
+};
+
 function pctChange(curr, prev) {
   if (prev === 0) return curr > 0 ? 100 : 0;
   return ((curr - prev) / prev * 100);
@@ -570,6 +613,17 @@ const metrics = [
   { key:'callbacks', label:'Total Callbacks', desc:'Prospects requesting follow-up', icon:'', iconText:'↺', accent:'' },
   { key:'appointments', label:'Total Appointments', desc:'Meetings confirmed with prospects', icon:'', iconText:'★', accent:'green' },
   { key:'appointmentPct', label:'Appointment %', desc:'Conversion rate from connected calls', icon:'', iconText:'↑', accent:'', isPct:true }
+];
+
+// Show & No Show metrics definition
+const showNoShowMetrics = [
+  { key:'totalMeetings', label:'Total Meetings', desc:'Total meetings scheduled this week', iconText:'📅', accent:'', isPct:false },
+  { key:'show', label:'Show', desc:'Prospects who attended the meeting', iconText:'✓', accent:'green', isPct:false },
+  { key:'showRate', label:'Show Rate (%)', desc:'Percentage of meetings attended', iconText:'%', accent:'green', isPct:true },
+  { key:'noShowCount', label:'No-Show Count', desc:'Prospects who did not attend', iconText:'✗', accent:'warn', isPct:false },
+  { key:'noShowRate', label:'No-Show Rate (%)', desc:'Percentage of meetings missed', iconText:'%', accent:'warn', isPct:true },
+  { key:'cancelledByProspects', label:'Meetings Cancelled by Prospects', desc:'Meetings cancelled before scheduled time', iconText:'⊘', accent:'amber', isPct:false },
+  { key:'cancelledRate', label:'Cancelled Rate (%)', desc:'Percentage of meetings cancelled', iconText:'%', accent:'amber', isPct:true }
 ];
 
 function formatVal(val, isPct) {
@@ -603,7 +657,26 @@ function buildCards(containerId, data, showChange) {
   });
 }
 
+function buildShowNoShowCards() {
+  const container = document.getElementById('show-noshow-kpis');
+  showNoShowMetrics.forEach((m, i) => {
+    const val = showNoShow[m.key];
+    const card = document.createElement('div');
+    card.className = 'kpi-card';
+    if (m.accent) card.dataset.accent = m.accent;
+    card.innerHTML = `
+      <div class="kpi-icon">${m.iconText}</div>
+      <div class="kpi-value">${m.isPct ? val.toFixed(2) + '%' : val}</div>
+      <div class="kpi-label">${m.label}</div>
+      <div class="kpi-desc">${m.desc}</div>
+    `;
+    card.style.transitionDelay = (i * 0.07) + 's';
+    container.appendChild(card);
+  });
+}
+
 buildCards('current-kpis', currentWeek, false);
+buildShowNoShowCards();
 buildCards('previous-kpis', previousWeek, true);
 
 // ── Insights ──
