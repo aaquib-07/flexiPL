@@ -880,31 +880,31 @@ body {
 <script>
 // ── Data ──
 const currentWeek = {
-  callsTaken: 612,
-  callsConnected: 133,
-  callbacks: 1,
-  appointments: 6
+  callsTaken: 601,
+  callsConnected: 122,
+  callbacks: 0,
+  appointments: 7
 };
 currentWeek.connectedPct = (currentWeek.callsConnected / currentWeek.callsTaken * 100);
 currentWeek.appointmentPct = (currentWeek.appointments / currentWeek.callsConnected * 100);
 
 const previousWeek = {
-  callsTaken: 688,
-  callsConnected: 154,
-  callbacks: 2,
-  appointments: 5
+  callsTaken: 612,
+  callsConnected: 133,
+  callbacks: 1,
+  appointments: 6
 };
 previousWeek.connectedPct = (previousWeek.callsConnected / previousWeek.callsTaken * 100);
 previousWeek.appointmentPct = (previousWeek.appointments / previousWeek.callsConnected * 100);
 
 // Show & No Show Metrics
 const showNoShow = {
-  totalMeetings: 6,
+  totalMeetings: 7,
   show: 0,
   noShowCount: 0,
   rescheduled: 0,
   cancelledByProspects: 0,
-  pending: 6
+  pending: 7
 };
 // Rates are calculated from the counts above. Type plain numbers only here: a "%" sign breaks the whole page.
 showNoShow.showRate = showNoShow.totalMeetings ? (showNoShow.show / showNoShow.totalMeetings * 100) : 0;
